@@ -169,7 +169,7 @@ public abstract class ApeClient extends WebSocketClient{
                 Method method = ApeClient.class.getMethod(methodName, JSONObject.class);
                 method.invoke(this,(JSONObject)headObject.get("data"));
             } catch (NoSuchMethodException e) {
-                Log.info("Not Implemented #Method : " + raw + e.getMessage());
+                Log.info("Ignoring,Not Implemented Method : " + e.getMessage());
             }   catch (Exception e) {
                 Log.error("Exception" ,e);
             }
