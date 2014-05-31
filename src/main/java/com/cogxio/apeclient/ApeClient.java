@@ -24,11 +24,13 @@ public abstract class ApeClient extends WebSocketClient{
     private String sessionId = null;
     private String pipeId = null ;
     private JSONObject  user  = null;
+    private String userName = null;
     private Long lastCommandTS = new Date().getTime();
     private CountDownLatch sessionCreated = new CountDownLatch( 1 );
     private static final Logger Log  =  LoggerFactory.getLogger(ApeClient.class);
     private final ScheduledExecutorService executor =  Executors.newScheduledThreadPool(1);
     private ScheduledFuture<?> scheduledKeepAlive = null;
+    public String publishKey = null;
 
     public ApeClient( URI uri ) {
         super( uri, new Draft_76() );
@@ -102,6 +104,7 @@ public abstract class ApeClient extends WebSocketClient{
      * @param userName
      */
     public void startSession(final String userName){
+        this.userName = userName;
         Map<String,Object> options = new HashMap<String, Object>();
         options.put("chl", chl);
         options.put("cmd","CONNECT");
@@ -150,24 +153,26 @@ public abstract class ApeClient extends WebSocketClient{
      */
     protected void processResponse (JSONArray response){
 
-        JSONObject headObject = (JSONObject) response.get(0);
+        JSONObject headObject =  response.getJSONObject(0);
         String raw = headObject.getString("raw");
         lastCommandTS = Long.parseLong(headObject.getString("time"));
         if (raw.equalsIgnoreCase("LOGIN")){
-            JSONObject indentObject = (JSONObject) response.get(1);
-            sessionId =  ((JSONObject)headObject.get("data")).getString("sessid");
-            user =  (JSONObject) ((JSONObject)indentObject.get("data")).get("user");
+            JSONObject indentObject =  response.getJSONObject(1);
+            sessionId =  headObject.getJSONObject("data").getString("sessid");
+            user =  indentObject.getJSONObject("data").getJSONObject("user");
             pipeId =  user.getString("pubid");
             sessionCreated.countDown();
         }
         else if(raw.equalsIgnoreCase("ERR")){
             Log.error("ERROR : " + headObject.getString("data"));
+            handleAPSError(headObject.getJSONObject("data"));
         }
         else {
             try {
                 String methodName = "action_" + raw.toLowerCase().replaceAll("-","_");
-                Method method = ApeClient.class.getMethod(methodName, JSONObject.class);
-                method.invoke(this,(JSONObject)headObject.get("data"));
+                Method method = ApeClient.class.getDeclaredMethod(methodName, JSONObject.class);
+                method.setAccessible(true);
+                method.invoke(this,headObject.getJSONObject("data"));
             } catch (NoSuchMethodException e) {
                 Log.info("Ignoring,Not Implemented Method : " + e.getMessage());
             }   catch (Exception e) {
@@ -176,12 +181,30 @@ public abstract class ApeClient extends WebSocketClient{
         }
     }
 
+    /**
+     * APS Error Code Handling.
+     * @param errorData
+     */
+    protected void handleAPSError(JSONObject errorData){
+        switch (errorData.getInt("code")){
+            case 4 :
+                //BAD_SESSID, restart app
+                this.sessionId = null;
+                this.sessionCreated = new CountDownLatch( 1 );
+                this.scheduledKeepAlive.cancel(true);
+                this.startSession(this.userName);
+                break;
+            case 7 :
+                throw new RuntimeException(errorData.getString("value"));
+        }
+    }
+
 
     /**
      * Inline Push Triggers this event
      * @param jsonObject
      */
-    public void action_event_x(JSONObject jsonObject){
+    protected void action_event_x(JSONObject jsonObject){
         action_event(jsonObject);
     }
 
@@ -189,7 +212,7 @@ public abstract class ApeClient extends WebSocketClient{
      * Normal Message Event
      * @param jsonObject
      */
-    public void action_event(JSONObject jsonObject){
+    protected void action_event(JSONObject jsonObject){
         pipeId =  ((JSONObject)jsonObject.get("pipe")).getString("pubid");
         action_onMessage(jsonObject);
     }
@@ -211,6 +234,19 @@ public abstract class ApeClient extends WebSocketClient{
         params.put("pipe", pipeId);
         options.put("params", params );
         send(options);
+    }
+
+    public void sendMessage( String channel, Object message, String eventType){
+        Map<String,Object> options = new HashMap<String, Object>();
+        options.put("password",publishKey);
+        options.put("channel", channel);
+        options.put("raw",eventType);
+        options.put("data", message);
+
+        Map<String,Object> command = new HashMap<String, Object>();
+        command.put("cmd","inlinepush");
+        command.put("params", options);
+        send(command);
     }
 
     abstract public void action_onMessage(JSONObject jsonObject);
