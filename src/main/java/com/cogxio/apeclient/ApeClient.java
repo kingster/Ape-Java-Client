@@ -176,5 +176,42 @@ public abstract class ApeClient extends WebSocketClient{
         }
     }
 
-    abstract public void action_event_x(JSONObject jsonObject);
+
+    /**
+     * Inline Push Triggers this event
+     * @param jsonObject
+     */
+    public void action_event_x(JSONObject jsonObject){
+        action_event(jsonObject);
+    }
+
+    /**
+     * Normal Message Event
+     * @param jsonObject
+     */
+    public void action_event(JSONObject jsonObject){
+        pipeId =  ((JSONObject)jsonObject.get("pipe")).getString("pubid");
+        action_onMessage(jsonObject);
+    }
+
+    /**
+     * Reply to last incomming message
+     * @param message
+     */
+    public void reply(String message){
+        Map<String,Object> options = new HashMap<String, Object>();
+        options.put("chl", ++chl);
+        options.put("cmd","Event");
+        options.put("sessid", sessionId);
+        options.put("freq", "1");
+        Map<String,Object> params = new HashMap<String, Object>();
+        params.put("event", "message");
+        params.put("sync", false);
+        params.put("data", message);
+        params.put("pipe", pipeId);
+        options.put("params", params );
+        send(options);
+    }
+
+    abstract public void action_onMessage(JSONObject jsonObject);
 }

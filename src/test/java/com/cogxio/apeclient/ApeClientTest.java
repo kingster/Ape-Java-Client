@@ -22,8 +22,9 @@ public class ApeClientTest {
 
         ApeClient apeClient = new ApeClient(uri) {
             @Override
-            public void action_event_x(JSONObject jsonObject) {
+            public void action_onMessage(JSONObject jsonObject) {
                 Log.info(jsonObject.toString());
+                reply("Hey Boss!");
             }
         };
 
