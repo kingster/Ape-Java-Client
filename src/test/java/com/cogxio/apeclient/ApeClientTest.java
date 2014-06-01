@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Random;
 
 /**
  * Created by kingster on 31/05/14.
@@ -35,8 +36,7 @@ public class ApeClientTest {
 
         String wsHost = "ws://ape.ptejada.com:80/6/";
         URI uri = new URI(wsHost);
-        String username = "username4";
-
+        String username = ("user_"+ new Random().nextInt(100)).replace("-","");
 
         ApeClient apeClient = new ApeClient(uri) {
             @Override
