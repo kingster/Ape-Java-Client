@@ -1,6 +1,6 @@
 language: java
 
-before_script:
+before_install:
   - git clone --depth=10 --branch=master git://github.com/Davidiusdadi/Java-WebSocket Davidiusdadi/Java-WebSocket
   - cd Davidiusdadi/Java-WebSocket
   - mvn install
