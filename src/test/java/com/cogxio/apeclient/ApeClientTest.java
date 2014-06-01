@@ -57,6 +57,8 @@ public class ApeClientTest {
 
         apeClient.join(Arrays.asList("music"));
         //apeClient.sendMessage("music", "awesome", "message");
+        Thread.sleep(2000);
+        apeClient.sendMessage("music", "awesome", "message");
 
         Thread.sleep(10000); //keep alive 10s.
     }
