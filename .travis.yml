@@ -6,6 +6,7 @@ env:
     - CI_HOME=`pwd`/$REPO
 
 before_install:
+  - echo pwd
   - cd $CI_HOME
   - git clone --depth=10 --branch=master git://github.com/Davidiusdadi/Java-WebSocket Davidiusdadi/Java-WebSocket
   - cd Davidiusdadi/Java-WebSocket
