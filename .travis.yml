@@ -1,8 +1,13 @@
 language: java
 
+env:
+  global:
+    - REPO="user/repo"
+    - CI_HOME=`pwd`/$REPO
+
 before_install:
-  - cd /
+  - cd $CI_HOME
   - git clone --depth=10 --branch=master git://github.com/Davidiusdadi/Java-WebSocket Davidiusdadi/Java-WebSocket
   - cd Davidiusdadi/Java-WebSocket
   - mvn install -DskipTests=true -B -V
-  - cd /kingster/Ape-Java-Client
+  - cd $CI_HOME/kingster/Ape-Java-Client
