@@ -4,7 +4,7 @@ env:
   global:
     - REPO="kingster/Ape-Java-Client"
     - CI_HOME=`pwd`
-    - PROJECT_HOME = `pwd`/$REPO
+    - PROJECT_HOME=`pwd`/$REPO
 
 before_install:
   - cd $CI_HOME
