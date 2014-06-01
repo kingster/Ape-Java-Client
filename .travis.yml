@@ -2,7 +2,7 @@ language: java
 
 env:
   global:
-    - REPO="user/repo"
+    - REPO="kingster/Ape-Java-Client"
     - CI_HOME=`pwd`/$REPO
 
 before_install:
