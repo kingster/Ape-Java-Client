@@ -2,6 +2,9 @@ package com.cogxio.apeclient;
 
 import net.sf.json.JSONObject;
 import org.java_websocket.WebSocketImpl;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,12 +16,27 @@ import java.util.Arrays;
  */
 public class ApeClientTest {
 
-    public static void main( String[] args ) throws  Exception{
+
+    @Before
+    public void setUp() throws Exception {
+    }
+
+
+    @After
+    public void tearDown() throws Exception {
+
+    }
+
+    @Test
+    public void testClient() throws Exception {
+
         WebSocketImpl.DEBUG = false;
         final Logger Log  =  LoggerFactory.getLogger(ApeClientTest.class);
 
-        String wsHost = "ws://channel.host.com:6969/6/";
+        String wsHost = "ws://ape.ptejada.com:80/6/";
         URI uri = new URI(wsHost);
+        String username = "username4";
+
 
         ApeClient apeClient = new ApeClient(uri) {
             @Override
@@ -27,13 +45,20 @@ public class ApeClientTest {
                 reply("Hey Boss!");
             }
         };
+        apeClient.publishKey = "password";
+
 
         apeClient.connectBlocking();
+        Log.info("Connected Successfully");
 
-        apeClient.startSession("username");
+        apeClient.startSession(username);
         apeClient.waitJoinedBlocking();
-        apeClient.join(Arrays.asList("channelId"));
+        Log.info("Joined as "+ username);
 
+        apeClient.join(Arrays.asList("music"));
+        //apeClient.sendMessage("music", "awesome", "message");
+
+        Thread.sleep(10000); //keep alive 10s.
     }
 
 }

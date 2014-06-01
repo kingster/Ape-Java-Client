@@ -4,7 +4,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
 import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.drafts.Draft_76;
+import org.java_websocket.drafts.Draft_75;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ public abstract class ApeClient extends WebSocketClient{
     public String publishKey = null;
 
     public ApeClient( URI uri ) {
-        super( uri, new Draft_76() );
+        super(uri, new Draft_75());
     }
 
     @Override
