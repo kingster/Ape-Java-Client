@@ -3,6 +3,11 @@ package com.cogxio.apeclient;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONSerializer;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_75;
 import org.java_websocket.handshake.ServerHandshake;
@@ -11,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
@@ -31,9 +37,12 @@ public abstract class ApeClient extends WebSocketClient{
     private final ScheduledExecutorService executor =  Executors.newScheduledThreadPool(1);
     private ScheduledFuture<?> scheduledKeepAlive = null;
     public String publishKey = null;
+    private String hostName = null;
+    private static HttpClient client = HttpClientBuilder.create().build();
 
     public ApeClient( URI uri ) {
         super(uri, new Draft_75());
+        hostName = "http://" +uri.getHost()+ ":" + uri.getPort();
     }
 
     @Override
@@ -81,6 +90,19 @@ public abstract class ApeClient extends WebSocketClient{
         triggerKeepAlive();
     }
 
+    public void sentHTTP(Map<String,Object> params) {
+        String response = null;
+        try {
+            String payload = URLEncoder.encode(JSONSerializer.toJSON(Arrays.asList(params)).toString(), "UTF-8");
+            HttpGet request = new HttpGet(hostName +"/?"+ payload);
+            HttpResponse httpResponse = client.execute(request);
+            response = EntityUtils.toString(httpResponse.getEntity());
+        }
+        catch (Exception e){
+            Log.error(e.getMessage(), e);
+        }
+        Log.debug(response);
+    }
 
     @Override
     public void onMessage( ByteBuffer blob ) {
@@ -168,9 +190,14 @@ public abstract class ApeClient extends WebSocketClient{
             handleAPSError(headObject.getJSONObject("data"));
         }
         else {
+            Method method = null;
             try {
                 String methodName = "action_" + raw.toLowerCase().replaceAll("-","_");
-                Method method = ApeClient.class.getDeclaredMethod(methodName, JSONObject.class);
+                try{
+                    method = this.getClass().getDeclaredMethod(methodName, JSONObject.class);
+                } catch (NoSuchMethodException e){
+                    method = ApeClient.class.getDeclaredMethod(methodName, JSONObject.class);
+                }
                 method.setAccessible(true);
                 method.invoke(this,headObject.getJSONObject("data"));
             } catch (NoSuchMethodException e) {
@@ -246,7 +273,7 @@ public abstract class ApeClient extends WebSocketClient{
         Map<String,Object> command = new HashMap<String, Object>();
         command.put("cmd","inlinepush");
         command.put("params", options);
-        send(command);
+        sentHTTP(command);
     }
 
     abstract public void action_onMessage(JSONObject jsonObject);
